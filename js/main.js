@@ -1,20 +1,27 @@
 // The most javascript of them all
 
-//begin script when window loads
-window.onload = setMap();
+//First line of main.js...wrap everything in a self-executing anonymous function to move to local scope
+(function(){
 
-//set up choropleth map
-function setMap(){
-    //map frame dimensions
-    var width = 960,
-        height = 460;
+    //pseudo-global variables
+    var csvArray = ["varA", "varB", "varC", "varD", "varE"]; //list of attributes
+    var expressed = csvArray[0]; //initial attribute
 
-    //create new svg container for the map
-    var map = d3.select("body")
-        .append("svg")
-        .attr("class", "map")
-        .attr("width", width)
-        .attr("height", height);
+    //begin script when window loads
+    window.onload = setMap();
+
+    //set up choropleth map
+    function setMap(){
+        //map frame dimensions
+        var width = 960,
+            height = 460;
+
+        //create new svg container for the map
+        var map = d3.select("body")
+            .append("svg")
+            .attr("class", "map")
+            .attr("width", width)
+            .attr("height", height);
 
     //create Albers equal area conic projection centered on France
     var projection = d3.geo.albers()
@@ -30,7 +37,7 @@ function setMap(){
 
     //use queue.js to parallelize asynchronous data loading
     d3_queue.queue()
-        .defer(d3.csv, "data/Arizona_shp/2014PopAge.csv") //load attributes from csv
+        .defer(d3.csv, "data/Arizona_shp/PopAge2014.csv") //load attributes from csv
         .defer(d3.json, "data/Arizona_shp/AZcountydata.topojson") //load background spatial data
         .await(callback);
 
@@ -42,38 +49,52 @@ function setMap(){
             .data(arizonaCounties)
             .enter()
             .append("path")
-            .attr("class", "COUNTY")
+            .attr("class", function(d){
+                return "Polygon " + d.properties.COUNTY;
+                })
             .attr("d", path);
 
-        //variables for data join
-        var attrArray = ["varA", "varB", "varC", "varD", "varE"];
-
-        //loop through csv to assign each set of csv attribute values to geojson region
-        for (var i=0; i<csvData.length; i++){
-            var csvRegion = csvData[i]; //the current region
-            var csvKey = csvRegion.adm1_code; //the CSV primary key
-
-            //loop through geojson regions to find correct region
-            for (var a=0; a<franceRegions.length; a++){
-
-                var geojsonProps = franceRegions[a].properties; //the current region geojson properties
-                var geojsonKey = geojsonProps.adm1_code; //the geojson primary key
-
-                //where primary keys match, transfer csv data to geojson properties object
-                if (geojsonKey == csvKey){
-
-                    //assign all attributes and values
-                    attrArray.forEach(function(attr){
-                        var val = parseFloat(csvRegion[attr]); //get csv attribute value
-                        geojsonProps[attr] = val; //assign attribute and value to geojson properties
-                    });
-                };
-            };
-
         //examine the results
-        console.log(arizonaCounties);
+        console.log(arizonaCounties);   
+
+        //loop through dummy array regions to label similar regions
+        for (var a=0; a<csvArray.length; a++){
+            //assign all attributes and values
+            var val = parseFloat(csvData[attr]); //get csv attribute value
+            csvArray[attr] = val; //assign attribute and value to geojson properties
         
-    
         };
+        
     };
-};
+
+    //function to create color scale generator
+    function makeColorScale(data){
+        var colorClasses = [
+            "#f7de9c",
+            "#e1bf61",
+            "#b59334",
+            "#7c5f10",
+            "#56420c"
+        ];
+
+        //create color scale generator
+        var colorScale = d3.scale.quantile()
+            .range(colorClasses);
+
+        //build array of all values of the expressed attribute
+        var domainArray = [];
+        for (var i=0; i<data.length; i++){
+            var val = parseFloat(data[i][expressed]);
+            domainArray.push(val);
+        };
+
+        //assign array of expressed values as scale domain
+        colorScale.domain(domainArray);
+
+        return colorScale;
+        };  
+
+
+    };
+
+})(); //last line of main.js
