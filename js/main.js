@@ -1,11 +1,13 @@
 // The most javascript of them all
 
+
 //First line of main.js...wrap everything in a self-executing anonymous function to move to local scope
 (function(){
 
     //pseudo-global variables
-    var csvArray = ["varA", "varB", "varC", "varD", "varE"]; //list of attributes
-    var expressed = csvArray[0]; //initial attribute
+    var csvArray = [0,1,2,3]; //list of attributes
+    var expressed = csvArray[0,1,2,3,4];
+
 
     //begin script when window loads
     window.onload = setMap();
@@ -23,75 +25,98 @@
             .attr("width", width)
             .attr("height", height);
 
-    //create Albers equal area conic projection centered on France
-    var projection = d3.geo.albers()
-    .rotate([108, 0])
-    .center([-3.64, 34.0])
-    .parallels([29.5, 45.5])
-    .scale(3000)
-    .translate([width / 2, height / 2])
-    .precision(.1);
+        //create Albers equal area conic projection centered on France
+        var projection = d3.geo.albers()
+        .rotate([108, 0])
+        .center([-3.64, 34.0])
+        .parallels([29.5, 45.5])
+        .scale(3000)
+        .translate([width / 2, height / 2])
+        .precision(.1);
 
-    var path = d3.geo.path()
-        .projection(projection);
+        var path = d3.geo.path()
+            .projection(projection);
 
-    //use queue.js to parallelize asynchronous data loading
-    d3_queue.queue()
-        .defer(d3.csv, "data/Arizona_shp/PopAge2014.csv") //load attributes from csv
-        .defer(d3.json, "data/Arizona_shp/AZcountydata.topojson") //load background spatial data
-        .await(callback);
+        //use queue.js to parallelize asynchronous data loading
+        d3_queue.queue()
+            .defer(d3.csv, "data/Arizona_shp/AZAge2014.csv") //load attributes from csv
+            .defer(d3.json, "data/Arizona_shp/AZcountydata.topojson") //load background spatial data
+            .await(callback);
 
-    function callback(error, csvData, arizona){
-        //translate europe TopoJSON
-        var arizonaCounties = topojson.feature(arizona, arizona.objects.AZcountydata).features;
-        
-        var counties = map.selectAll(".Polygon")
-            .data(arizonaCounties)
-            .enter()
-            .append("path")
-            .attr("class", function(d){
-                return "Polygon " + d.properties.COUNTY;
-                })
-            .attr("d", path);
+        function callback(error, csvData, arizona){
 
-        //examine the results
-        console.log(arizonaCounties);   
+            //translate europe TopoJSON
+            var arizonaCounties = topojson.feature(arizona, arizona.objects.AZcountydata).features;
+            
+            function setEnumerationUnits(arizonaCounties, map, path, colorScale){
 
-        //loop through dummy array regions to label similar regions
-        for (var a=0; a<csvArray.length; a++){
-            //assign all attributes and values
-            var val = parseFloat(csvData[attr]); //get csv attribute value
-            csvArray[attr] = val; //assign attribute and value to geojson properties
+                var counties = map.selectAll(".COUNTY")
+                    .data(arizonaCounties)
+                    .enter()
+                    .append("path")
+                    .attr("class", function(d){
+                        return "COUNTY " + d.properties.OBJECTID;
+                    })
+                    .attr("d", path)
+                    .style("fill", function(d){
+                        return colorScale(d.properties.COUNTY[expressed]);
+                    });
+
+            };
+
+            //examine the results
+            console.log(arizonaCounties);  
+
+            console.log(csvData[0]);
+
+            //build large array of all values for later
+            for (var i=0; i<arizonaCounties.length; i++){
+                csvArray[i] = csvData[i]; 
+            };
+
+            console.log(csvArray);
+
+            //create the color scale
+            var colorScale = makeColorScale(csvData);
+
+            console.log(colorScale);
+
+            setEnumerationUnits(arizonaCounties, map, path, colorScale);
         
         };
-        
-    };
 
-    //function to create color scale generator
-    function makeColorScale(data){
-        var colorClasses = [
-            "#f7de9c",
-            "#e1bf61",
-            "#b59334",
-            "#7c5f10",
-            "#56420c"
-        ];
+        //function to create color scale generator
+        function makeColorScale(data){
+            var colorClasses = [
+                "#f7de9c",
+                "#e1bf61",
+                "#b59334",
+                "#7c5f10",
+                "#56420c"
+            ];
 
-        //create color scale generator
-        var colorScale = d3.scale.quantile()
-            .range(colorClasses);
+            //create color scale generator
+            var colorScale = d3.scale.quantile()
+                .range(colorClasses);
 
-        //build array of all values of the expressed attribute
-        var domainArray = [];
-        for (var i=0; i<data.length; i++){
-            var val = parseFloat(data[i][expressed]);
-            domainArray.push(val);
-        };
+            console.log(data.length);
 
-        //assign array of expressed values as scale domain
-        colorScale.domain(domainArray);
+            //build array of all values of the expressed attribute
+            var domainArray = data;
 
-        return colorScale;
+            console.log(csvArray);
+
+            for (var j=0; j<csvArray.length; j++) {
+
+            }
+
+            //assign array of expressed values as scale domain
+            colorScale.domain(csvArray);
+
+            console.log(colorScale);
+
+            return colorScale;
+
         };  
 
 
