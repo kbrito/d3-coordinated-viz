@@ -115,7 +115,7 @@
             console.log(data.length);
 
             //build array of all values of the expressed attribute
-            var domainArray = data;
+            var domainArray = data[expressed];
 
             console.log(csvArray);
 
@@ -126,9 +126,7 @@
             //assign array of expressed values as scale domain
             colorScale.domain(csvArray);
 
-            colorScale.quantiles();
-
-            console.log(colorScale);
+            console.log(colorScale.quantiles());
 
             return colorScale;
 
