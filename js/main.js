@@ -7,6 +7,7 @@
     //pseudo-global variables
     var csvArray = [0,1,2,3]; //list of attributes
     var expressed = csvArray[0,1,2,3,4];
+    var pop = 0;
 
 
     //begin script when window loads
@@ -59,9 +60,21 @@
                     })
                     .attr("d", path)
                     .style("fill", function(d){
-                        return colorScale(d.properties.COUNTY[expressed]);
+                        return choropleth(d.properties[pop], colorScale);
                     });
 
+            };
+
+            //function to test for data value and return color
+            function choropleth(props, colorScale){
+                //make sure attribute value is a number
+                var val = parseFloat(props);
+                //if attribute value exists, assign a color; otherwise assign gray
+                if (val && val != NaN){
+                    return colorScale(val);
+                } else {
+                    return "#CCC";
+                };
             };
 
             //examine the results
@@ -112,6 +125,8 @@
 
             //assign array of expressed values as scale domain
             colorScale.domain(csvArray);
+
+            colorScale.quantiles();
 
             console.log(colorScale);
 
