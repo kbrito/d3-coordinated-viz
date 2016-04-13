@@ -4,3 +4,7 @@
     stroke: #F7DE9C;
     stroke-width: 1px;
 }
+
+.map {
+    border: medium solid #999;
+}
